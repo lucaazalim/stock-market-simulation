@@ -92,12 +92,18 @@ public class StockMarket implements Observable<TransactionObserver> {
         return this.operationBooks.get(asset);
     }
 
-    public Set<OperationBook> getOperationBooks() {
-        return new HashSet<>(this.operationBooks.values());
+    /**
+     * @return an unmodifiable collection of all the operation books of the stock market.
+     */
+    public Collection<OperationBook> getOperationBooks() {
+        return Collections.unmodifiableCollection(this.operationBooks.values());
     }
 
+    /**
+     * @return an unmodifiable set of all the stocks of the stock market.
+     */
     public Set<Asset> getStocks() {
-        return this.operationBooks.keySet();
+        return Collections.unmodifiableSet(this.operationBooks.keySet());
     }
 
     /**
@@ -127,7 +133,7 @@ public class StockMarket implements Observable<TransactionObserver> {
     }
 
     /**
-     * Starts processing the registered operations.
+     * Starts processing the registered operations every one second.
      */
     public void startProcessingOperations() {
 
@@ -139,9 +145,16 @@ public class StockMarket implements Observable<TransactionObserver> {
                         e.printStackTrace();
                     }
                 },
-                0, 1, TimeUnit.SECONDS
+                1, 1, TimeUnit.SECONDS
         ));
 
+    }
+
+    /**
+     * Stops processing the registered operations.
+     */
+    public void stop() {
+        this.operationProcessorExecutorService.shutdown();
     }
 
     /**

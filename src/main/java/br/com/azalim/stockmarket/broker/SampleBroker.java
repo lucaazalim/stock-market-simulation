@@ -1,6 +1,6 @@
 package br.com.azalim.stockmarket.broker;
 
-import br.com.azalim.stockmarket.utils.PrintColor;
+import static org.fusesource.jansi.Ansi.*;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 
 /**
@@ -49,7 +49,8 @@ public enum SampleBroker implements Broker {
      */
     @Override
     public void onNewOfferRegistered(OfferOperation offerOperation) {
-        System.out.println(this + " observes " + offerOperation.getStock() + " and was notified of a new offer.");
+        System.out.println(ansi().fgCyan().a("[Broker] ").a(this).a(" observes ")
+                .a(offerOperation.getStock()).a(" and was notified of a new offer."));
     }
 
     /**
@@ -57,7 +58,7 @@ public enum SampleBroker implements Broker {
      */
     @Override
     public String toString() {
-        return PrintColor.ANSI_BLUE + this.name() + PrintColor.ANSI_RESET;
+        return ansi().fgBlue() + this.name() + ansi().reset();
     }
 
 }

@@ -7,6 +7,7 @@ import br.com.azalim.stockmarket.operation.offer.OfferOperationStatus;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
 /**
@@ -17,7 +18,7 @@ public class OperationBook implements Observable<OperationBookObserver> {
     /**
      * The operations registered to the book.
      */
-    private final Set<Operation> operations = new TreeSet<>();
+    private final Set<Operation> operations = new ConcurrentSkipListSet<>();
 
     /**
      * The observers that are going to be notified when there is a new offer operation registered.

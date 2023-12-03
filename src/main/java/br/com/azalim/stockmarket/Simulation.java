@@ -11,9 +11,13 @@ import br.com.azalim.stockmarket.operation.info.InfoOperation;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static br.com.azalim.stockmarket.utils.PrintColor.*;
+import static org.fusesource.jansi.Ansi.*;
 
 /**
  * Represents a simulation of the stock market.
@@ -23,10 +27,19 @@ public class Simulation {
 
     private static final Random RANDOM = new Random();
 
+    private static boolean RUNNING = false;
+    private static final Set<Thread> BROKER_THREADS = new HashSet<>();
+
     /**
      * Starts the simulation.
      */
     public static void start() {
+
+        if (RUNNING) {
+            throw new IllegalStateException("Simulation is already running");
+        }
+
+        RUNNING = true;
 
         observeTransactions();
 
@@ -42,8 +55,7 @@ public class Simulation {
 
                         try {
                             Thread.sleep(RANDOM.nextLong(300, 10000));
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+                        } catch (InterruptedException ignored) {
                         }
 
                         registerRandomOperation(broker);
@@ -56,7 +68,10 @@ public class Simulation {
 
             });
 
+            thread.setName("Broker Thread - " + broker);
             thread.start();
+
+            BROKER_THREADS.add(thread);
 
         }
 
@@ -67,8 +82,8 @@ public class Simulation {
      */
     private static void observeTransactions() {
         StockMarket.getInstance().observe((from, to, stock, quantity, price) ->
-                System.out.println(ANSI_GREEN + "New transaction! " + ANSI_RESET + quantity + " " + stock
-                        + " were transfered from " + from + " to " + to + ".")
+                log(ansi().fgGreen().a("New transaction!").reset().a(quantity).a(" ").a(stock)
+                        .a(" were transfered from ").a(from).a(" to ").a(to).a("."))
         );
     }
 
@@ -81,10 +96,13 @@ public class Simulation {
 
         List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getStocks());
 
-        allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).forEach(stock -> {
-            System.out.println(ANSI_GREEN + "New stock observation! " + ANSI_RESET + broker + " is observing " + stock + ".");
-            StockMarket.getInstance().getOperationBook(stock).observe(broker);
-        });
+        String stocksBeingObserved = allAssets.stream()
+                .skip(RANDOM.nextInt(allAssets.size()))
+                .peek(stock -> StockMarket.getInstance().getOperationBook(stock).observe(broker))
+                .map(Asset::toString)
+                .collect(Collectors.joining(", "));
+
+        log(ansi().a(broker).a(" is observing the following stocks: ").a(stocksBeingObserved).a("."));
 
     }
 
@@ -96,7 +114,7 @@ public class Simulation {
     private static void registerRandomOperation(SampleBroker broker) {
 
         Set<Asset> allAssets = StockMarket.getInstance().getStocks();
-        Asset randomAsset = allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).findFirst().orElse(null);
+        Asset randomAsset = allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).findFirst().orElseThrow();
         Operation randomOperation;
 
         if (RANDOM.nextDouble() < 0.2D) {
@@ -104,17 +122,18 @@ public class Simulation {
             InfoOperation infoOperation = createRandomInfoOperation(broker, randomAsset);
             randomOperation = infoOperation;
 
-            System.out.println(ANSI_GREEN + "New price request! " + ANSI_RESET + broker + " wants to know "
-                    + infoOperation.getStock() + "'s price.");
+            log(ansi().fgGreen().a("New price request! ").reset().a(broker).a(" wants to know ")
+                    .a(infoOperation.getStock()).a("'s price."));
 
         } else {
 
             OfferOperation offerOperation = createRandomOfferOperation(broker, randomAsset);
             randomOperation = offerOperation;
 
-            System.out.println(ANSI_GREEN + "New offer! " + ANSI_RESET + broker + " wants to buy "
-                    + offerOperation.getQuantity() + " " + offerOperation.getStock() + " for "
-                    + offerOperation.getPrice() + " each.");
+            log(ansi().fgGreen().a("New offer! ").reset().a(broker).a(" wants to ")
+                    .a(offerOperation.getType() == OfferOperationType.BUY ? "buy " : "sell ")
+                    .a(offerOperation.getQuantity()).a(" ").a(offerOperation.getStock())
+                    .a(" for ").a(offerOperation.getPrice()).a(" each."));
 
         }
 
@@ -136,8 +155,14 @@ public class Simulation {
         return OperationFactory.createInfoOperation(
                 broker, asset, randomRecentInstant,
                 price -> {
-                    String displayPrice = (price < 0 ? ANSI_RED + "[no executed offers yet]" : price) + ANSI_RESET;
-                    System.out.println(broker + " requested the price of " + asset + " at " + randomRecentInstant + " and was answered with " + displayPrice + ".");
+
+                    LocalDateTime localDateTime = LocalDateTime.ofInstant(randomRecentInstant, ZoneId.systemDefault());
+                    String displayInstant = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SSS").format(localDateTime);
+                    String displayPrice = (price < 0 ? ansi().fgRed().a("[no price]") : price).toString();
+
+                    log(ansi().a(broker).a(" requested the price of ").a(asset).a(" at ")
+                            .a(displayInstant).a(" and received ").a(displayPrice).reset().a("."));
+
                 }
         );
 
@@ -156,12 +181,16 @@ public class Simulation {
         int randomQuantity = asset.getMarketType() == MarketType.COMMON
                 ? RANDOM.nextInt(1, 16) * 100 // random multiple of 100 from 100 to 1500
                 : RANDOM.nextInt(1, 100); // random integer value from 1 to 99
-        double randomPrice = ((int) (RANDOM.nextDouble() * 10000)) / 100D; // random double value from 0 to 100 with two decimal cases
+        double randomPrice = RANDOM.nextInt(1, 10001) / 100D; // random double value from 1 to 100 with two decimal cases
 
         return OperationFactory.createOfferOperation(
                 broker, asset, randomOfferOperationType, randomQuantity, randomPrice
         );
 
+    }
+
+    private static void log(Object message) {
+        System.out.println(ansi().fgCyan().a("[Simulation] ").reset().a(message).reset());
     }
 
 }

@@ -46,21 +46,17 @@ public class OfferOperation extends Operation {
         super(broker, asset);
 
         if(!asset.getMarketType().isQuantityValid(quantity)) {
-            throw new IllegalArgumentException("Invalid quantity for the market type");
+            throw new IllegalArgumentException("Invalid quantity for the asset market type");
         }
 
         Objects.requireNonNull(type);
 
-        if (!(type == OfferOperationType.BUY || type == OfferOperationType.SELL)) {
-            throw new IllegalArgumentException("Invalid operation type");
-        }
-
         if (quantity <= 0) {
-            throw new IllegalArgumentException("Invalid quantity");
+            throw new IllegalArgumentException("Quantity must be greater than 0: " + quantity);
         }
 
         if (price <= 0) {
-            throw new IllegalArgumentException("Invalid price");
+            throw new IllegalArgumentException("Price must be greater than 0: " + price);
         }
 
         this.type = type;

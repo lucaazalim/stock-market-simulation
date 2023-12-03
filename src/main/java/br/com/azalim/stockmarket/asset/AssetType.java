@@ -21,6 +21,7 @@ public enum AssetType {
     PREFERRED_CLASS_A(5, true),
 
     /**
+     * Assets "preferenciais classe B"
      */
     PREFERRED_CLASS_B(6, true),
 

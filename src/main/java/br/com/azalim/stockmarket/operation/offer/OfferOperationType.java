@@ -1,6 +1,6 @@
 package br.com.azalim.stockmarket.operation.offer;
 
-import static br.com.azalim.stockmarket.utils.PrintColor.*;
+import static org.fusesource.jansi.Ansi.*;
 
 /**
  * Represents the type of offer operation.
@@ -15,7 +15,7 @@ public enum OfferOperationType {
      */
     @Override
     public String toString() {
-        return (this == BUY ? ANSI_GREEN : ANSI_RED) + this.name() + ANSI_RESET;
+        return (this == BUY ? ansi().fgGreen() : ansi().fgRed()) + this.name() + ansi().reset();
     }
 
 }

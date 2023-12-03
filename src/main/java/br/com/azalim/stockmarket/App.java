@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static org.fusesource.jansi.Ansi.ansi;
+
 public class App {
 
     public static void main(String[] args) {
@@ -20,8 +22,6 @@ public class App {
 
         // Initializes the stock market.
         StockMarket stockMarket = new StockMarket(companies, brokers);
-
-        System.out.println(stockMarket.getStocks());
 
         // Starts processing the registered operations.
         stockMarket.startProcessingOperations();

@@ -4,7 +4,7 @@ import br.com.azalim.stockmarket.asset.AssetType;
 
 import java.util.Set;
 
-import static br.com.azalim.stockmarket.utils.PrintColor.*;
+import static org.fusesource.jansi.Ansi.*;
 
 /**
  * Represents some of the companies that are available in the B3 stock market.
@@ -107,7 +107,7 @@ public enum SampleCompany implements Company {
      */
     @Override
     public String toString() {
-        return ANSI_YELLOW + this.name() + ANSI_RESET;
+        return ansi().fgYellow() + this.name() + ansi().reset();
     }
 
 }

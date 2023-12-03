@@ -1,7 +1,7 @@
 package br.com.azalim.stockmarket.asset;
 
 import br.com.azalim.stockmarket.company.Company;
-import static br.com.azalim.stockmarket.utils.PrintColor.*;
+import static org.fusesource.jansi.Ansi.*;
 
 /**
  * Represents an asset, like PETR4, PETR4F or BOVA11.
@@ -106,6 +106,6 @@ public class Asset {
      */
     @Override
     public String toString() {
-        return ANSI_YELLOW + this.symbol + ANSI_RESET;
+        return ansi().fgYellow() + this.symbol + ansi().reset();
     }
 }

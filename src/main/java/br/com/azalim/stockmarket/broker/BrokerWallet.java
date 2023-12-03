@@ -21,7 +21,7 @@ public class BrokerWallet {
      * @param asset the asset that the transaction is related to.
      * @param transaction the transaction to be registered.
      */
-    public void registerTransaction(Asset asset, Transaction transaction) {
+    public synchronized void registerTransaction(Asset asset, Transaction transaction) {
         asset = asset.getParentAsset(); // Make sure fractional assets are stored in the same place as their common assets
         this.transactions.computeIfAbsent(asset, key -> new TreeSet<>()).add(transaction);
     }
@@ -33,7 +33,7 @@ public class BrokerWallet {
      * @param asset the asset that the transaction is related to.
      * @return the balance of the broker wallet for the given asset.
      */
-    public int getBalance(Asset asset) {
+    public synchronized int getBalance(Asset asset) {
         return this.transactions.get(asset).stream()
                 .sorted()
                 .mapToInt(Transaction::getQuantity)
