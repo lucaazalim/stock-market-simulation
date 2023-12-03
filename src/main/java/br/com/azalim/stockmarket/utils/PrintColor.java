@@ -1,4 +1,4 @@
-package br.com.azalim.stockmarket;
+package br.com.azalim.stockmarket.utils;
 
 /**
  * Simple utility class to print colored strings in the console.

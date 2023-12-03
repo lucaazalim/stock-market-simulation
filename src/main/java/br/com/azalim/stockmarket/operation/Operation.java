@@ -1,14 +1,15 @@
 package br.com.azalim.stockmarket.operation;
 
-import br.com.azalim.stockmarket.Broker;
-import br.com.azalim.stockmarket.Stock;
+import br.com.azalim.stockmarket.asset.Asset;
+import br.com.azalim.stockmarket.broker.Broker;
+import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Represents an operation. It can be a buy or sell offer ({@link br.com.azalim.stockmarket.operation.impl.OfferOperation})
- * or a request for stock price information ({@link br.com.azalim.stockmarket.operation.impl.InfoOperation}).
+ * Represents an operation. It can be a buy or sell offer ({@link OfferOperation})
+ * or a request for asset price information ({@link br.com.azalim.stockmarket.operation.info.InfoOperation}).
  */
 public abstract class Operation implements Comparable<Operation> {
 
@@ -18,9 +19,9 @@ public abstract class Operation implements Comparable<Operation> {
     private final Broker broker;
 
     /**
-     * The stock that the operation is related to.
+     * The asset that the operation is related to.
      */
-    private final Stock stock;
+    private final Asset asset;
 
     /**
      * The instant that the operation was created.
@@ -31,15 +32,15 @@ public abstract class Operation implements Comparable<Operation> {
      * Creates an operation.
      *
      * @param broker the broker that owns the operation.
-     * @param stock the stock that the operation is related to.
+     * @param asset the asset that the operation is related to.
      */
-    public Operation(Broker broker, Stock stock) {
+    public Operation(Broker broker, Asset asset) {
 
         Objects.requireNonNull(broker);
-        Objects.requireNonNull(stock);
+        Objects.requireNonNull(asset);
 
         this.broker = broker;
-        this.stock = stock;
+        this.asset = asset;
         this.instant = Instant.now();
 
     }
@@ -52,10 +53,10 @@ public abstract class Operation implements Comparable<Operation> {
     }
 
     /**
-     * @return the stock that the operation is related to.
+     * @return the asset that the operation is related to.
      */
-    public Stock getStock() {
-        return this.stock;
+    public Asset getStock() {
+        return this.asset;
     }
 
     /**

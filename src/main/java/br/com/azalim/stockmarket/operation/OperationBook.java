@@ -2,8 +2,8 @@ package br.com.azalim.stockmarket.operation;
 
 import br.com.azalim.stockmarket.observer.Observable;
 import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
-import br.com.azalim.stockmarket.operation.enums.OfferOperationStatus;
-import br.com.azalim.stockmarket.operation.impl.OfferOperation;
+import br.com.azalim.stockmarket.operation.offer.OfferOperation;
+import br.com.azalim.stockmarket.operation.offer.OfferOperationStatus;
 
 import java.time.Instant;
 import java.util.*;

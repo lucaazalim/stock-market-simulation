@@ -1,5 +1,10 @@
 package br.com.azalim.stockmarket;
 
+import br.com.azalim.stockmarket.asset.Asset;
+import br.com.azalim.stockmarket.asset.MarketType;
+import br.com.azalim.stockmarket.broker.Broker;
+import br.com.azalim.stockmarket.broker.BrokerWallet;
+import br.com.azalim.stockmarket.company.Company;
 import br.com.azalim.stockmarket.observer.Observable;
 import br.com.azalim.stockmarket.observer.impl.TransactionObserver;
 import br.com.azalim.stockmarket.operation.OperationBook;
@@ -9,7 +14,6 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Represents the stock market.
@@ -19,12 +23,12 @@ public class StockMarket implements Observable<TransactionObserver> {
     /**
      * The singleton instance of this class.
      */
-    private static final StockMarket instance = new StockMarket();
+    private static StockMarket instance;
 
     /**
      * The operation books of the stocks.
      */
-    private final Map<Stock, OperationBook> operationBooks = new HashMap<>();
+    private final Map<Asset, OperationBook> operationBooks = new HashMap<>();
 
     /**
      * The wallets of the brokers.
@@ -41,6 +45,33 @@ public class StockMarket implements Observable<TransactionObserver> {
      */
     private final ScheduledExecutorService operationProcessorExecutorService = Executors.newSingleThreadScheduledExecutor();
 
+    public StockMarket(Set<Company> companies, Set<Broker> brokers) {
+
+        if (instance != null) {
+            throw new IllegalStateException("Asset market already instantiated");
+        }
+
+        companies
+                .forEach(company -> company.getShareTypes().stream()
+                        .mapMulti((shareType, consumer) -> {
+
+                            Asset commonAsset = new Asset(company, shareType, MarketType.COMMON, null);
+                            consumer.accept(commonAsset);
+
+                            if (shareType.hasFractionalMarket()) {
+                                consumer.accept(new Asset(company, shareType, MarketType.FRACTIONAL, commonAsset));
+                            }
+
+                        })
+                        .map(Asset.class::cast)
+                        .forEach(stock -> this.operationBooks.put(stock, new OperationBook())));
+
+        brokers.forEach(broker -> this.wallets.put(broker, new BrokerWallet()));
+
+        instance = this;
+
+    }
+
     /**
      * Registers a new operation.
      * The operation will be registered in the operation book of the stock of the operation.
@@ -52,33 +83,31 @@ public class StockMarket implements Observable<TransactionObserver> {
     }
 
     /**
-     * Retrieves the operation book of a given stock.
-     * If the operation book does not exist, it will be created.
+     * Retrieves the operation book of a given asset.
      *
-     * @param stock the stock of the operation book.
-     * @return the operation book of the given stock.
+     * @param asset the asset of the operation book.
+     * @return the operation book of the given asset or null if it does not exist.
      */
-    public OperationBook getOperationBook(Stock stock) {
-        return Optional.ofNullable(this.operationBooks.get(stock)).orElseGet(() -> {
-            OperationBook operationBook = new OperationBook();
-            this.operationBooks.put(stock, operationBook);
-            return operationBook;
-        });
+    public OperationBook getOperationBook(Asset asset) {
+        return this.operationBooks.get(asset);
+    }
+
+    public Set<OperationBook> getOperationBooks() {
+        return new HashSet<>(this.operationBooks.values());
+    }
+
+    public Set<Asset> getStocks() {
+        return this.operationBooks.keySet();
     }
 
     /**
      * Retrieves the wallet of a given broker.
-     * If the wallet does not exist, it will be created.
      *
      * @param broker the owner of the wallet.
-     * @return the wallet of the given broker.
+     * @return the wallet of the given broker or null if it does not exist.
      */
     public BrokerWallet getWallet(Broker broker) {
-        return Optional.ofNullable(this.wallets.get(broker)).orElseGet(() -> {
-            BrokerWallet brokerWallet = new BrokerWallet();
-            this.wallets.put(broker, brokerWallet);
-            return brokerWallet;
-        });
+        return this.wallets.get(broker);
     }
 
     /**
@@ -87,14 +116,14 @@ public class StockMarket implements Observable<TransactionObserver> {
      *
      * @param from     the broker that sold the shares.
      * @param to       the broker that bought the shares.
-     * @param stock    the stock of the transaction.
+     * @param asset    the asset of the transaction.
      * @param quantity the quantity of shares transacted.
      * @param price    the price that was paid for the shares.
      */
-    public void registerTransaction(Broker from, Broker to, Stock stock, int quantity, double price) {
-        this.getWallet(from).registerTransaction(stock, new Transaction(-quantity, price));
-        this.getWallet(to).registerTransaction(stock, new Transaction(quantity, price));
-        this.observers.forEach(transactionObserver -> transactionObserver.onNewTransactionRegistered(from, to, stock, quantity, price));
+    public void registerTransaction(Broker from, Broker to, Asset asset, int quantity, double price) {
+        this.getWallet(from).registerTransaction(asset, new Transaction(-quantity, price));
+        this.getWallet(to).registerTransaction(asset, new Transaction(quantity, price));
+        this.observers.forEach(transactionObserver -> transactionObserver.onNewTransactionRegistered(from, to, asset, quantity, price));
     }
 
     /**
@@ -102,8 +131,14 @@ public class StockMarket implements Observable<TransactionObserver> {
      */
     public void startProcessingOperations() {
 
-        Stream.of(Stock.values()).forEach(stock -> this.operationProcessorExecutorService.scheduleWithFixedDelay(
-                () -> this.getOperationBook(stock).getOperations().forEach(Operation::process),
+        this.getOperationBooks().forEach(operationBook -> this.operationProcessorExecutorService.scheduleWithFixedDelay(
+                () -> {
+                    try {
+                        operationBook.getOperations().forEach(Operation::process);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                },
                 0, 1, TimeUnit.SECONDS
         ));
 

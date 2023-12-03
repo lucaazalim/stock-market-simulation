@@ -1,11 +1,9 @@
-package br.com.azalim.stockmarket.operation.impl;
+package br.com.azalim.stockmarket.operation.offer;
 
+import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.StockMarket;
-import br.com.azalim.stockmarket.Broker;
-import br.com.azalim.stockmarket.operation.enums.OfferOperationStatus;
-import br.com.azalim.stockmarket.operation.enums.OfferOperationType;
+import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.Operation;
-import br.com.azalim.stockmarket.Stock;
 
 import java.util.Objects;
 
@@ -38,14 +36,18 @@ public class OfferOperation extends Operation {
      * Creates an offer operation.
      *
      * @param broker   the broker that owns the operation.
-     * @param stock    the stock that the operation is related to.
+     * @param asset    the asset that the operation is related to.
      * @param type     the type of the operation.
      * @param quantity the quantity of shares that are being offered.
      * @param price    the price of each share.
      */
-    public OfferOperation(Broker broker, Stock stock, OfferOperationType type, int quantity, double price) {
+    public OfferOperation(Broker broker, Asset asset, OfferOperationType type, int quantity, double price) {
 
-        super(broker, stock);
+        super(broker, asset);
+
+        if(!asset.getMarketType().isQuantityValid(quantity)) {
+            throw new IllegalArgumentException("Invalid quantity for the market type");
+        }
 
         Objects.requireNonNull(type);
 

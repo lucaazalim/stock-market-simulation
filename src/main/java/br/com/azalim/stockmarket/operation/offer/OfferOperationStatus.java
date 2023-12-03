@@ -1,4 +1,4 @@
-package br.com.azalim.stockmarket.operation.enums;
+package br.com.azalim.stockmarket.operation.offer;
 
 /**
  * Represents the status of an offer operation.

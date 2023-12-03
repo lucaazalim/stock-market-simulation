@@ -1,9 +1,9 @@
-package br.com.azalim.stockmarket.operation.impl;
+package br.com.azalim.stockmarket.operation.info;
 
+import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.StockMarket;
-import br.com.azalim.stockmarket.Broker;
+import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.Operation;
-import br.com.azalim.stockmarket.Stock;
 import br.com.azalim.stockmarket.operation.OperationBook;
 
 import java.time.Instant;
@@ -33,12 +33,12 @@ public class InfoOperation extends Operation {
      * Creates an info operation.
      *
      * @param broker the broker that owns the request.
-     * @param stock the stock that the request is related to.
+     * @param asset the asset that the request is related to.
      * @param infoInstant the instant of the price information you want.
      * @param answerConsumer the consumer that will receive the price information.
      */
-    public InfoOperation(Broker broker, Stock stock, Instant infoInstant, Consumer<Double> answerConsumer) {
-        super(broker, stock);
+    public InfoOperation(Broker broker, Asset asset, Instant infoInstant, Consumer<Double> answerConsumer) {
+        super(broker, asset);
         this.infoInstant = infoInstant;
         this.answerConsumer = answerConsumer;
     }

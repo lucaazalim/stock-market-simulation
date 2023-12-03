@@ -1,13 +1,12 @@
-package br.com.azalim.stockmarket;
+package br.com.azalim.stockmarket.broker;
 
-import br.com.azalim.stockmarket.PrintColor;
-import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
-import br.com.azalim.stockmarket.operation.impl.OfferOperation;
+import br.com.azalim.stockmarket.utils.PrintColor;
+import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 
 /**
- * Represents a broker.
+ * Represents some of the B3 brokers.
  */
-public enum Broker implements OperationBookObserver {
+public enum SampleBroker implements Broker {
 
     XPIN("XP Investimentos"),
     CCLR("Clear Corretora"),
@@ -30,13 +29,14 @@ public enum Broker implements OperationBookObserver {
      *
      * @param name the name of the broker.
      */
-    Broker(String name) {
+    SampleBroker(String name) {
         this.name = name;
     }
 
     /**
      * @return the name of the broker.
      */
+    @Override
     public String getName() {
         return this.name;
     }

@@ -1,7 +1,7 @@
 package br.com.azalim.stockmarket.observer.impl;
 
 import br.com.azalim.stockmarket.observer.Observer;
-import br.com.azalim.stockmarket.operation.impl.OfferOperation;
+import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 
 /**
  * Represents an observer that observes operations.

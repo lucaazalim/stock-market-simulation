@@ -1,6 +1,6 @@
-package br.com.azalim.stockmarket.operation.enums;
+package br.com.azalim.stockmarket.operation.offer;
 
-import static br.com.azalim.stockmarket.PrintColor.*;
+import static br.com.azalim.stockmarket.utils.PrintColor.*;
 
 /**
  * Represents the type of offer operation.

@@ -7,8 +7,19 @@ import java.time.Instant;
  */
 public class Transaction implements Comparable<Transaction> {
 
+    /**
+     * The quantity of shares in the transaction.
+     */
     private final int quantity;
+
+    /**
+     * The price of each share in the transaction.
+     */
     private final double price;
+
+    /**
+     * The instant of the transaction.
+     */
     private final Instant instant;
 
     /**
@@ -31,7 +42,7 @@ public class Transaction implements Comparable<Transaction> {
     }
 
     /**
-     * @return the price of the shares in the transaction.
+     * @return the price of each share in the transaction.
      */
     public double getPrice() {
         return this.price;

@@ -1,15 +1,19 @@
 package br.com.azalim.stockmarket;
 
-import br.com.azalim.stockmarket.operation.enums.OfferOperationType;
+import br.com.azalim.stockmarket.asset.Asset;
+import br.com.azalim.stockmarket.asset.MarketType;
+import br.com.azalim.stockmarket.broker.Broker;
+import br.com.azalim.stockmarket.broker.SampleBroker;
+import br.com.azalim.stockmarket.operation.offer.OfferOperationType;
 import br.com.azalim.stockmarket.operation.Operation;
 import br.com.azalim.stockmarket.operation.OperationFactory;
-import br.com.azalim.stockmarket.operation.impl.InfoOperation;
-import br.com.azalim.stockmarket.operation.impl.OfferOperation;
+import br.com.azalim.stockmarket.operation.info.InfoOperation;
+import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 
 import java.time.Instant;
 import java.util.*;
 
-import static br.com.azalim.stockmarket.PrintColor.*;
+import static br.com.azalim.stockmarket.utils.PrintColor.*;
 
 /**
  * Represents a simulation of the stock market.
@@ -26,22 +30,28 @@ public class Simulation {
 
         observeTransactions();
 
-        for (Broker broker : Broker.values()) {
+        for (SampleBroker broker : SampleBroker.values()) {
 
             Thread thread = new Thread(() -> {
 
-                observeRandomStocks(broker);
+                try {
 
-                while (true) {
+                    observeRandomStocks(broker);
 
-                    try {
-                        Thread.sleep(RANDOM.nextLong(300, 10000));
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                    while (true) {
+
+                        try {
+                            Thread.sleep(RANDOM.nextLong(300, 10000));
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        registerRandomOperation(broker);
+
                     }
 
-                    registerRandomOperation(broker);
-
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
             });
@@ -64,31 +74,34 @@ public class Simulation {
 
     /**
      * Observes a random number of random stocks.
+     *
      * @param broker the broker that will observe the stocks.
      */
     private static void observeRandomStocks(Broker broker) {
 
-        List<Stock> allStocks = Arrays.asList(Stock.values());
-        int stocksToObserve = RANDOM.nextInt(allStocks.size());
+        List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getStocks());
 
-        Collections.shuffle(allStocks);
-
-        allStocks.stream().limit(stocksToObserve).forEach(stock -> StockMarket.getInstance().getOperationBook(stock).observe(broker));
+        allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).forEach(stock -> {
+            System.out.println(ANSI_GREEN + "New stock observation! " + ANSI_RESET + broker + " is observing " + stock + ".");
+            StockMarket.getInstance().getOperationBook(stock).observe(broker);
+        });
 
     }
 
     /**
      * Registers a random operation. It can be an info operation or an offer operation.
+     *
      * @param broker the broker that will register the operation.
      */
-    private static void registerRandomOperation(Broker broker) {
+    private static void registerRandomOperation(SampleBroker broker) {
 
-        Stock randomStock = Stock.values()[RANDOM.nextInt(Stock.values().length)];
+        Set<Asset> allAssets = StockMarket.getInstance().getStocks();
+        Asset randomAsset = allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).findFirst().orElse(null);
         Operation randomOperation;
 
         if (RANDOM.nextDouble() < 0.2D) {
 
-            InfoOperation infoOperation = createRandomInfoOperation(broker, randomStock);
+            InfoOperation infoOperation = createRandomInfoOperation(broker, randomAsset);
             randomOperation = infoOperation;
 
             System.out.println(ANSI_GREEN + "New price request! " + ANSI_RESET + broker + " wants to know "
@@ -96,7 +109,7 @@ public class Simulation {
 
         } else {
 
-            OfferOperation offerOperation = createRandomOfferOperation(broker, randomStock);
+            OfferOperation offerOperation = createRandomOfferOperation(broker, randomAsset);
             randomOperation = offerOperation;
 
             System.out.println(ANSI_GREEN + "New offer! " + ANSI_RESET + broker + " wants to buy "
@@ -113,18 +126,18 @@ public class Simulation {
      * Creates a random info operation.
      *
      * @param broker the broker that will own the operation.
-     * @param stock the stock of the info operation to be created.
+     * @param asset  the asset of the info operation to be created.
      * @return the created info operation.
      */
-    private static InfoOperation createRandomInfoOperation(Broker broker, Stock stock) {
+    private static InfoOperation createRandomInfoOperation(Broker broker, Asset asset) {
 
         Instant randomRecentInstant = Instant.now().minusSeconds(RANDOM.nextInt(10));
 
         return OperationFactory.createInfoOperation(
-                broker, stock, randomRecentInstant,
+                broker, asset, randomRecentInstant,
                 price -> {
                     String displayPrice = (price < 0 ? ANSI_RED + "[no executed offers yet]" : price) + ANSI_RESET;
-                    System.out.println(broker + " requested the price of " + stock + " at " + randomRecentInstant + " and was answered with " + displayPrice + ".");
+                    System.out.println(broker + " requested the price of " + asset + " at " + randomRecentInstant + " and was answered with " + displayPrice + ".");
                 }
         );
 
@@ -134,17 +147,19 @@ public class Simulation {
      * Creates a random offer operation.
      *
      * @param broker the broker that will own the operation.
-     * @param stock the stock of the offer operation to be created.
+     * @param asset  the asset of the offer operation to be created.
      * @return the created offer operation.
      */
-    private static OfferOperation createRandomOfferOperation(Broker broker, Stock stock) {
+    private static OfferOperation createRandomOfferOperation(Broker broker, Asset asset) {
 
         OfferOperationType randomOfferOperationType = OfferOperationType.values()[RANDOM.nextInt(OfferOperationType.values().length)];
-        int randomQuantity = RANDOM.nextInt(25, 250); // random quantity from 25 to 249
+        int randomQuantity = asset.getMarketType() == MarketType.COMMON
+                ? RANDOM.nextInt(1, 16) * 100 // random multiple of 100 from 100 to 1500
+                : RANDOM.nextInt(1, 100); // random integer value from 1 to 99
         double randomPrice = ((int) (RANDOM.nextDouble() * 10000)) / 100D; // random double value from 0 to 100 with two decimal cases
 
         return OperationFactory.createOfferOperation(
-                broker, stock, randomOfferOperationType, randomQuantity, randomPrice
+                broker, asset, randomOfferOperationType, randomQuantity, randomPrice
         );
 
     }
