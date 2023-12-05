@@ -17,4 +17,11 @@ To build and run the simulation, make sure you have the following installed:
 - Java SDK 20 or higher
 - Maven 4.0.0 or higher
 
+Then, run the following commands from the project root directory:
+
+```bash
+mvn clean install
+java -jar target/stockmarket-1.0-SNAPSHOT.jar
+```
+
 The main class is called `App.java`. When executed, it initiates the simulation, creating a thread for each broker. These threads observe random stocks and register random buy, sell and info operations to the stock market. There is also a thread for processing the registered operations to each operation book.
