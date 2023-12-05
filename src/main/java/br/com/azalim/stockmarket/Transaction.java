@@ -58,6 +58,9 @@ public class Transaction implements Comparable<Transaction> {
         return this.price;
     }
 
+    /**
+     * @return the total value of the transaction (quantity * price).
+     */
     public double getTotalValue() {
         return this.quantity * this.price;
     }
