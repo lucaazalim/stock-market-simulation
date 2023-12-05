@@ -7,8 +7,6 @@ import br.com.azalim.stockmarket.company.Company;
 import br.com.azalim.stockmarket.observer.Observable;
 import br.com.azalim.stockmarket.observer.impl.TransactionObserver;
 import br.com.azalim.stockmarket.operation.OperationBook;
-import br.com.azalim.stockmarket.operation.offer.OfferOperation;
-import br.com.azalim.stockmarket.wallet.Transaction;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -47,6 +45,7 @@ public class StockMarket implements Observable<TransactionObserver> {
     private final ScheduledExecutorService operationProcessorExecutorService = Executors.newSingleThreadScheduledExecutor(runnable -> {
         Thread thread = new Thread(runnable);
         thread.setName("Operation Processor");
+        thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace());
         return thread;
     });
 
@@ -132,11 +131,10 @@ public class StockMarket implements Observable<TransactionObserver> {
      */
     public void startProcessingOperations() {
 
-        this.getOperationBooks().values()
-                .forEach(operationBook -> this.operationProcessorExecutorService.scheduleWithFixedDelay(
-                        () -> operationBook.processOperations(this),
-                        1, 1, TimeUnit.SECONDS
-                ));
+        this.getOperationBooks().values().forEach(operationBook -> this.operationProcessorExecutorService.scheduleWithFixedDelay(
+                () -> operationBook.processOperations(this),
+                1, 1, TimeUnit.SECONDS
+        ));
 
     }
 

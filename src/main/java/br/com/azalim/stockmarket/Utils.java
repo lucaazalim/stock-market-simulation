@@ -1,5 +1,7 @@
 package br.com.azalim.stockmarket;
 
+import java.util.concurrent.ThreadFactory;
+
 public class Utils {
 
     /**

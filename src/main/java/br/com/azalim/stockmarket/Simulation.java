@@ -24,7 +24,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Represents a simulation of the stock market.
- * It creates one thread for each broker, observes random stocks and registers random operations.
+ * It creates one thread for each broker, observes random assets and registers random operations.
  */
 public class Simulation {
 
@@ -43,36 +43,33 @@ public class Simulation {
 
         RUNNING = true;
 
+        log("Starting...");
+
         observeTransactions();
 
         StockMarket.getInstance().getBrokers().forEach(broker -> {
 
             if (broker instanceof OperationBookObserver operationBookObserver) {
-                observeRandomStocks(operationBookObserver);
+                observeRandomAssets(operationBookObserver);
             }
 
             Thread thread = new Thread(() -> {
 
-                try {
+                while (true) {
 
-                    while (true) {
-
-                        try {
-                            Thread.sleep(RANDOM.nextLong(300, 10000));
-                        } catch (InterruptedException ignored) {
-                        }
-
-                        registerRandomOperation(broker);
-
+                    try {
+                        Thread.sleep(RANDOM.nextLong(300, 10000));
+                    } catch (InterruptedException ignored) {
                     }
 
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    registerRandomOperation(broker);
+
                 }
 
             });
 
             thread.setName("Broker Thread - " + broker);
+            thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace());
             thread.start();
 
         });
@@ -95,28 +92,32 @@ public class Simulation {
      * Observes the creation of new transactions and prints information about it.
      */
     private static void observeTransactions() {
-        StockMarket.getInstance().observe((from, to, stock, quantity, price) ->
-                log(ansi().fgGreen().a("New transaction! ").reset().a(quantity).a(" shares of ").a(stock)
+
+        log("Observing transactions...");
+
+        StockMarket.getInstance().observe((from, to, asset, quantity, price) ->
+                log(ansi().fgGreen().a("New transaction! ").reset().a(quantity).a(" shares of ").a(asset)
                         .a(" were transfered from ").a(from).a(" to ").a(to).a("."))
         );
+
     }
 
     /**
-     * Observes a random number of random stocks.
+     * Observes a random number of random assets.
      *
      * @param operationBookObserver the observer that will observe the operation books.
      */
-    private static void observeRandomStocks(OperationBookObserver operationBookObserver) {
+    private static void observeRandomAssets(OperationBookObserver operationBookObserver) {
 
         List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getOperationBooks().keySet());
 
-        String stocksBeingObserved = allAssets.stream()
+        String observedAssets = allAssets.stream()
                 .skip(RANDOM.nextInt(allAssets.size()))
-                .peek(stock -> StockMarket.getInstance().getOperationBook(stock).observe(operationBookObserver))
+                .peek(asset -> StockMarket.getInstance().getOperationBook(asset).observe(operationBookObserver))
                 .map(Asset::toString)
                 .collect(Collectors.joining(", "));
 
-        log(ansi().a(operationBookObserver).a(" is observing the following stocks: ").a(stocksBeingObserved).a("."));
+        log(ansi().a(operationBookObserver).a(" is observing the following assets: ").a(observedAssets).a("."));
 
     }
 
