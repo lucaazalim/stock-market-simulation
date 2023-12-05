@@ -4,12 +4,12 @@ import br.com.azalim.stockmarket.asset.AssetType;
 
 import java.util.Set;
 
-import static org.fusesource.jansi.Ansi.*;
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Represents some of the companies that are available in the B3 stock market.
  */
-public enum SampleCompany implements Company {
+public enum B3Company implements Company {
 
     PETR(
             "Petróleo Brasileiro S.A. - Petrobras",
@@ -76,7 +76,7 @@ public enum SampleCompany implements Company {
      * @param name        the name of the stock.
      * @param description the description of the stock.
      */
-    SampleCompany(String name, String description, AssetType... assetTypes) {
+    B3Company(String name, String description, AssetType... assetTypes) {
         this.name = name;
         this.description = description;
         this.assetTypes = Set.of(assetTypes);
@@ -98,7 +98,7 @@ public enum SampleCompany implements Company {
     }
 
     @Override
-    public Set<AssetType> getShareTypes() {
+    public Set<AssetType> getAssetTypes() {
         return this.assetTypes;
     }
 

@@ -1,9 +1,12 @@
 package br.com.azalim.stockmarket.broker;
 
-import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.Transaction;
+import br.com.azalim.stockmarket.asset.Asset;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Represents a broker wallet.
@@ -18,7 +21,7 @@ public class BrokerWallet {
     /**
      * Registers a transaction in the broker wallet.
      *
-     * @param asset the asset that the transaction is related to.
+     * @param asset       the asset that the transaction is related to.
      * @param transaction the transaction to be registered.
      */
     public synchronized void registerTransaction(Asset asset, Transaction transaction) {
@@ -27,13 +30,13 @@ public class BrokerWallet {
     }
 
     /**
-     * Calculates the balance of the broker wallet for the given asset.
-     * It may be positive or negative.
+     * Calculates the quantity of shares of the broker wallet for the given asset.
      *
      * @param asset the asset that the transaction is related to.
-     * @return the balance of the broker wallet for the given asset.
+     * @return the quantity of shares of the broker wallet for the given asset.
      */
-    public synchronized int getBalance(Asset asset) {
+    public synchronized int getQuantity(Asset asset) {
+        asset = asset.getParentAsset(); // Make sure to get the quantity of the common asset
         return this.transactions.get(asset).stream()
                 .sorted()
                 .mapToInt(Transaction::getQuantity)

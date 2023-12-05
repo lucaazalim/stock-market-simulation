@@ -16,16 +16,6 @@ public enum AssetType {
     PREFERRED(4, true),
 
     /**
-     * Assets "preferenciais classe A"
-     */
-    PREFERRED_CLASS_A(5, true),
-
-    /**
-     * Assets "preferenciais classe B"
-     */
-    PREFERRED_CLASS_B(6, true),
-
-    /**
      * Assets "BDRs, ETs e Units"
      */
     UNITS(11, false);
@@ -43,7 +33,7 @@ public enum AssetType {
     /**
      * Creates an asset type.
      *
-     * @param suffix the suffix of the asset type.
+     * @param suffix           the suffix of the asset type.
      * @param fractionalMarket indicates if the asset type has a fractional market.
      */
     AssetType(int suffix, boolean fractionalMarket) {

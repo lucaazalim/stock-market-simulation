@@ -12,6 +12,6 @@ public interface Company {
 
     String getDescription();
 
-    Set<AssetType> getShareTypes();
+    Set<AssetType> getAssetTypes();
 
 }

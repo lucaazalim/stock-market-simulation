@@ -1,5 +1,6 @@
 package br.com.azalim.stockmarket.operation;
 
+import br.com.azalim.stockmarket.StockMarket;
 import br.com.azalim.stockmarket.observer.Observable;
 import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
@@ -36,8 +37,8 @@ public class OperationBook implements Observable<OperationBookObserver> {
      * Finds all the operations that are instances of a given class.
      *
      * @param operationClass the class of the operations to be found.
+     * @param <T>            the type of the operations to be found.
      * @return the operations that are instances of the given class.
-     * @param <T> the type of the operations to be found.
      */
     public <T> Set<T> getOperations(Class<T> operationClass) {
         return this.operations.stream()
@@ -85,6 +86,15 @@ public class OperationBook implements Observable<OperationBookObserver> {
     }
 
     /**
+     * Processes the registered operations.
+     *
+     * @param stockMarket the stock market where the operations are being processed.
+     */
+    public void processOperations(StockMarket stockMarket) {
+        this.getOperations().forEach(operation -> operation.process(stockMarket, this));
+    }
+
+    /**
      * Subscribes to be notified of new offer operations registered to the book.
      *
      * @param observer the observer that is going to be notified when new offer operations are registered.
@@ -92,6 +102,14 @@ public class OperationBook implements Observable<OperationBookObserver> {
     @Override
     public void observe(OperationBookObserver observer) {
         this.observers.add(observer);
+    }
+
+    /**
+     * @return the observers that are going to be notified when there is a new offer operation registered.
+     */
+    @Override
+    public Collection<OperationBookObserver> getObservers() {
+        return Collections.unmodifiableSet(this.observers);
     }
 
 }

@@ -26,12 +26,22 @@ public class Transaction implements Comparable<Transaction> {
      * Creates a new transaction with the given quantity and price.
      *
      * @param quantity the quantity of shares in the transaction.
-     * @param price the price of the shares in the transaction.
+     * @param price    the price of the shares in the transaction.
      */
     public Transaction(int quantity, double price) {
+
+        if (quantity == 0) {
+            throw new IllegalArgumentException("The quantity must be different than zero");
+        }
+
+        if (price < 0) {
+            throw new IllegalArgumentException("The price must be greater than or equal to zero");
+        }
+
         this.quantity = quantity;
         this.price = price;
         this.instant = Instant.now();
+
     }
 
     /**
@@ -46,6 +56,10 @@ public class Transaction implements Comparable<Transaction> {
      */
     public double getPrice() {
         return this.price;
+    }
+
+    public double getTotalValue() {
+        return this.quantity * this.price;
     }
 
     /**

@@ -1,9 +1,10 @@
 package br.com.azalim.stockmarket.operation.offer;
 
-import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.StockMarket;
+import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.Operation;
+import br.com.azalim.stockmarket.operation.OperationBook;
 
 import java.util.Objects;
 
@@ -45,7 +46,7 @@ public class OfferOperation extends Operation {
 
         super(broker, asset);
 
-        if(!asset.getMarketType().isQuantityValid(quantity)) {
+        if (!asset.getMarketType().isQuantityValid(quantity)) {
             throw new IllegalArgumentException("Invalid quantity for the asset market type");
         }
 
@@ -81,30 +82,6 @@ public class OfferOperation extends Operation {
     }
 
     /**
-     * Consumes a given quantity of shares from the offer.
-     *
-     * @param quantity the quantity of shares to be consumed.
-     * @return the quantity of shares that were consumed.
-     */
-    public int consumeQuantity(int quantity) {
-
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("Invalid quantity to consume: " + quantity);
-        }
-
-        if (status == OfferOperationStatus.EXECUTED) {
-            throw new IllegalStateException("Cannot consume quantity for an executed offer");
-        }
-
-        int consumedQuantity = Math.min(this.quantity, quantity);
-        this.quantity -= consumedQuantity;
-
-        this.status = this.quantity == 0 ? OfferOperationStatus.EXECUTED : OfferOperationStatus.PARTIALLY_EXECUTED;
-        return consumedQuantity;
-
-    }
-
-    /**
      * @return the price of each share.
      */
     public double getPrice() {
@@ -119,12 +96,36 @@ public class OfferOperation extends Operation {
     }
 
     /**
+     * Consumes a given quantity of shares from the offer.
+     *
+     * @param quantity the quantity of shares to be consumed.
+     * @return the quantity of shares that were consumed.
+     */
+    public int consumeQuantity(int quantity) {
+
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Invalid quantity to consume: " + quantity);
+        }
+
+        if (this.getStatus() == OfferOperationStatus.EXECUTED) {
+            throw new IllegalStateException("Cannot consume quantity for an executed offer");
+        }
+
+        int consumedQuantity = Math.min(this.quantity, quantity);
+        this.quantity -= consumedQuantity;
+
+        this.status = this.quantity == 0 ? OfferOperationStatus.EXECUTED : OfferOperationStatus.PARTIALLY_EXECUTED;
+        return consumedQuantity;
+
+    }
+
+    /**
      * Checks if a given offer is a possible candidate to be executed against this offer.
      *
      * @param offerOperation the offer operation to be checked.
      * @return true if the offer matches the given offer operation, false otherwise.
      */
-    public boolean matches(OfferOperation offerOperation) {
+    private boolean matches(OfferOperation offerOperation) {
 
         Objects.requireNonNull(offerOperation);
 
@@ -136,41 +137,21 @@ public class OfferOperation extends Operation {
     }
 
     /**
-     * Registers a transaction between this offer and a given offer operation.
-     *
-     * @param candidateOfferOperation the offer operation to be used to create the transaction.
-     * @param consumedQuantity        the quantity of shares that were consumed from the offer operation.
-     */
-    private void registerTransaction(OfferOperation candidateOfferOperation, int consumedQuantity) {
-
-        Broker from, to;
-        double price;
-
-        if (this.getType() == OfferOperationType.BUY) {
-            from = candidateOfferOperation.getBroker();
-            to = this.getBroker();
-            price = candidateOfferOperation.getPrice();
-        } else {
-            from = this.getBroker();
-            to = candidateOfferOperation.getBroker();
-            price = this.getPrice();
-        }
-
-        StockMarket.getInstance().registerTransaction(from, to, this.getStock(), consumedQuantity, price);
-
-    }
-
-    /**
      * Processes the offer, executing it against other offers if possible.
+     *
+     * @param stockMarket the stock market where the offer is being processed.
      */
     @Override
-    public void process() {
+    public boolean process(StockMarket stockMarket, OperationBook operationBook) {
+
+        Objects.requireNonNull(stockMarket);
+        Objects.requireNonNull(operationBook);
 
         if (this.getStatus() == OfferOperationStatus.EXECUTED) {
-            return;
+            return false;
         }
 
-        StockMarket.getInstance().getOperationBook(this.getStock()).getOperations(OfferOperation.class)
+        operationBook.getOperations(OfferOperation.class)
                 .stream()
                 .filter(this::matches)
                 .forEach(offerOperation -> {
@@ -180,13 +161,18 @@ public class OfferOperation extends Operation {
                     if (this.getStatus() != OfferOperationStatus.EXECUTED) {
 
                         int consumedQuantity = offerOperation.consumeQuantity(this.getQuantity());
-
                         this.consumeQuantity(consumedQuantity);
-                        this.registerTransaction(offerOperation, consumedQuantity);
+
+                        OfferOperation sellOfferOperation = this.getType() == OfferOperationType.SELL ? this : offerOperation;
+                        OfferOperation buyOfferOperation = this.getType() == OfferOperationType.BUY ? this : offerOperation;
+
+                        stockMarket.registerTransaction(sellOfferOperation, buyOfferOperation, consumedQuantity);
 
                     }
 
                 });
+
+        return true;
 
     }
 

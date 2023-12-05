@@ -3,21 +3,25 @@ package br.com.azalim.stockmarket;
 import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.asset.MarketType;
 import br.com.azalim.stockmarket.broker.Broker;
-import br.com.azalim.stockmarket.broker.SampleBroker;
-import br.com.azalim.stockmarket.operation.offer.OfferOperationType;
+import br.com.azalim.stockmarket.broker.BrokerWallet;
+import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
 import br.com.azalim.stockmarket.operation.Operation;
 import br.com.azalim.stockmarket.operation.OperationFactory;
 import br.com.azalim.stockmarket.operation.info.InfoOperation;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
+import br.com.azalim.stockmarket.operation.offer.OfferOperationType;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.fusesource.jansi.Ansi.*;
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Represents a simulation of the stock market.
@@ -28,7 +32,6 @@ public class Simulation {
     private static final Random RANDOM = new Random();
 
     private static boolean RUNNING = false;
-    private static final Set<Thread> BROKER_THREADS = new HashSet<>();
 
     /**
      * Starts the simulation.
@@ -43,13 +46,15 @@ public class Simulation {
 
         observeTransactions();
 
-        for (SampleBroker broker : SampleBroker.values()) {
+        StockMarket.getInstance().getBrokers().forEach(broker -> {
+
+            if (broker instanceof OperationBookObserver operationBookObserver) {
+                observeRandomStocks(operationBookObserver);
+            }
 
             Thread thread = new Thread(() -> {
 
                 try {
-
-                    observeRandomStocks(broker);
 
                     while (true) {
 
@@ -71,9 +76,26 @@ public class Simulation {
             thread.setName("Broker Thread - " + broker);
             thread.start();
 
-            BROKER_THREADS.add(thread);
+        });
 
+    }
+
+    public static void stop() {
+
+        // TODO
+
+        if (!RUNNING) {
+            throw new IllegalStateException("Simulation is not running");
         }
+
+        StockMarket stockMarket = StockMarket.getInstance();
+
+        stockMarket.getBrokers().forEach(broker -> {
+            BrokerWallet brokerWallet = stockMarket.getWallet(broker);
+            //System.out.println(broker + " -> " + brokerWallet.getQuantity);
+        });
+
+        RUNNING = false;
 
     }
 
@@ -82,7 +104,7 @@ public class Simulation {
      */
     private static void observeTransactions() {
         StockMarket.getInstance().observe((from, to, stock, quantity, price) ->
-                log(ansi().fgGreen().a("New transaction!").reset().a(quantity).a(" ").a(stock)
+                log(ansi().fgGreen().a("New transaction! ").reset().a(quantity).a(" shares of ").a(stock)
                         .a(" were transfered from ").a(from).a(" to ").a(to).a("."))
         );
     }
@@ -90,19 +112,19 @@ public class Simulation {
     /**
      * Observes a random number of random stocks.
      *
-     * @param broker the broker that will observe the stocks.
+     * @param operationBookObserver the observer that will observe the operation books.
      */
-    private static void observeRandomStocks(Broker broker) {
+    private static void observeRandomStocks(OperationBookObserver operationBookObserver) {
 
-        List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getStocks());
+        List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getAssets());
 
         String stocksBeingObserved = allAssets.stream()
                 .skip(RANDOM.nextInt(allAssets.size()))
-                .peek(stock -> StockMarket.getInstance().getOperationBook(stock).observe(broker))
+                .peek(stock -> StockMarket.getInstance().getOperationBook(stock).observe(operationBookObserver))
                 .map(Asset::toString)
                 .collect(Collectors.joining(", "));
 
-        log(ansi().a(broker).a(" is observing the following stocks: ").a(stocksBeingObserved).a("."));
+        log(ansi().a(operationBookObserver).a(" is observing the following stocks: ").a(stocksBeingObserved).a("."));
 
     }
 
@@ -111,9 +133,9 @@ public class Simulation {
      *
      * @param broker the broker that will register the operation.
      */
-    private static void registerRandomOperation(SampleBroker broker) {
+    private static void registerRandomOperation(Broker broker) {
 
-        Set<Asset> allAssets = StockMarket.getInstance().getStocks();
+        Set<Asset> allAssets = StockMarket.getInstance().getAssets();
         Asset randomAsset = allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).findFirst().orElseThrow();
         Operation randomOperation;
 
@@ -123,7 +145,7 @@ public class Simulation {
             randomOperation = infoOperation;
 
             log(ansi().fgGreen().a("New price request! ").reset().a(broker).a(" wants to know ")
-                    .a(infoOperation.getStock()).a("'s price."));
+                    .a(infoOperation.getAsset()).a("'s price."));
 
         } else {
 
@@ -132,12 +154,12 @@ public class Simulation {
 
             log(ansi().fgGreen().a("New offer! ").reset().a(broker).a(" wants to ")
                     .a(offerOperation.getType() == OfferOperationType.BUY ? "buy " : "sell ")
-                    .a(offerOperation.getQuantity()).a(" ").a(offerOperation.getStock())
+                    .a(offerOperation.getQuantity()).a(" shares of ").a(offerOperation.getAsset())
                     .a(" for ").a(offerOperation.getPrice()).a(" each."));
 
         }
 
-        StockMarket.getInstance().registerOperation(randomOperation);
+        StockMarket.getInstance().getOperationBook(randomAsset).register(randomOperation);
 
     }
 

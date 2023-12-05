@@ -30,7 +30,7 @@ public enum MarketType {
     /**
      * Creates a market type.
      *
-     * @param suffix the suffix of the market type, like "F" for the fractional market type.
+     * @param suffix            the suffix of the market type, like "F" for the fractional market type.
      * @param quantityPredicate the predicate that indicates if a quantity is valid for the market type.
      */
     MarketType(String suffix, Predicate<Integer> quantityPredicate) {

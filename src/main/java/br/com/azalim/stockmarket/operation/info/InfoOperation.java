@@ -1,12 +1,13 @@
 package br.com.azalim.stockmarket.operation.info;
 
-import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.StockMarket;
+import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.Operation;
 import br.com.azalim.stockmarket.operation.OperationBook;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -32,15 +33,21 @@ public class InfoOperation extends Operation {
     /**
      * Creates an info operation.
      *
-     * @param broker the broker that owns the request.
-     * @param asset the asset that the request is related to.
-     * @param infoInstant the instant of the price information you want.
+     * @param broker         the broker that owns the request.
+     * @param asset          the asset that the request is related to.
+     * @param infoInstant    the instant of the price information you want.
      * @param answerConsumer the consumer that will receive the price information.
      */
     public InfoOperation(Broker broker, Asset asset, Instant infoInstant, Consumer<Double> answerConsumer) {
+
         super(broker, asset);
+
+        Objects.requireNonNull(infoInstant);
+        Objects.requireNonNull(answerConsumer);
+
         this.infoInstant = infoInstant;
         this.answerConsumer = answerConsumer;
+
     }
 
     /**
@@ -58,25 +65,26 @@ public class InfoOperation extends Operation {
     }
 
     /**
-     * Answers the request by sending the price information to the consumer.
-     *
-     * @param value the price information.
-     */
-    public void answer(double value) {
-        this.answerConsumer.accept(value);
-        this.answered = true;
-    }
-
-    /**
      * Processes the operation by answering to the request with the proper price information.
+     *
+     * @param stockMarket the stock market that contains the operation books.
      */
     @Override
-    public void process() {
+    public boolean process(StockMarket stockMarket, OperationBook operationBook) {
+
+        Objects.requireNonNull(stockMarket);
+        Objects.requireNonNull(operationBook);
 
         if (!this.isAnswered()) {
-            OperationBook operationBook = StockMarket.getInstance().getOperationBook(this.getStock());
-            this.answer(operationBook.getPriceAtInstant(this.getInfoInstant()));
+
+            this.answerConsumer.accept(operationBook.getPriceAtInstant(this.getInfoInstant()));
+            this.answered = true;
+
+            return true;
+
         }
+
+        return false;
 
     }
 }

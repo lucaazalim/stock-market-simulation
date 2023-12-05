@@ -1,5 +1,6 @@
 package br.com.azalim.stockmarket.operation;
 
+import br.com.azalim.stockmarket.StockMarket;
 import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
@@ -32,7 +33,7 @@ public abstract class Operation implements Comparable<Operation> {
      * Creates an operation.
      *
      * @param broker the broker that owns the operation.
-     * @param asset the asset that the operation is related to.
+     * @param asset  the asset that the operation is related to.
      */
     public Operation(Broker broker, Asset asset) {
 
@@ -55,7 +56,7 @@ public abstract class Operation implements Comparable<Operation> {
     /**
      * @return the asset that the operation is related to.
      */
-    public Asset getStock() {
+    public Asset getAsset() {
         return this.asset;
     }
 
@@ -68,8 +69,11 @@ public abstract class Operation implements Comparable<Operation> {
 
     /**
      * Processes the operation.
+     *
+     * @param stockMarket the stock market where the operation is being processed.
+     * @return true if the operation was processed successfully, false otherwise.
      */
-    public abstract void process();
+    public abstract boolean process(StockMarket stockMarket, OperationBook operationBook);
 
     /**
      * Compares this operation with another operation.

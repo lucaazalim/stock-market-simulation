@@ -1,12 +1,14 @@
 package br.com.azalim.stockmarket.broker;
 
-import static org.fusesource.jansi.Ansi.*;
+import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
+
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Represents some of the B3 brokers.
  */
-public enum SampleBroker implements Broker {
+public enum B3Broker implements Broker, OperationBookObserver {
 
     XPIN("XP Investimentos"),
     CCLR("Clear Corretora"),
@@ -29,7 +31,7 @@ public enum SampleBroker implements Broker {
      *
      * @param name the name of the broker.
      */
-    SampleBroker(String name) {
+    B3Broker(String name) {
         this.name = name;
     }
 
@@ -50,7 +52,7 @@ public enum SampleBroker implements Broker {
     @Override
     public void onNewOfferRegistered(OfferOperation offerOperation) {
         System.out.println(ansi().fgCyan().a("[Broker] ").a(this).a(" observes ")
-                .a(offerOperation.getStock()).a(" and was notified of a new offer."));
+                .a(offerOperation.getAsset()).a(" and was notified of a new offer."));
     }
 
     /**
