@@ -1,6 +1,6 @@
 # Stock Market Simulation
 
-This is a Java application that simulates a stock market, slightly inspired by the brazilian stock market ([B3](https://www.b3.com.br/en_us/)). It was built as a assignment for the Modular Programming course at the PUC Minas university during my Software Engineering program.
+This is a Java application that simulates a stock market, slightly inspired by the brazilian stock market ([B3](https://www.b3.com.br/en_us/)). It was built as an assignment for the Modular Programming course at the PUC Minas university during my Software Engineering program.
 
 To build and run the simulation, make sure you have the following installed:
 
