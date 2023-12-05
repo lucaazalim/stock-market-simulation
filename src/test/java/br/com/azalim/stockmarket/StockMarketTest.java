@@ -4,6 +4,7 @@ import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.asset.AssetType;
 import br.com.azalim.stockmarket.asset.MarketType;
 import br.com.azalim.stockmarket.broker.Broker;
+import br.com.azalim.stockmarket.wallet.Wallet;
 import br.com.azalim.stockmarket.company.Company;
 import br.com.azalim.stockmarket.observer.impl.TransactionObserver;
 import br.com.azalim.stockmarket.operation.OperationBook;
@@ -11,7 +12,9 @@ import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -41,11 +44,9 @@ public class StockMarketTest {
         }
     };
 
-    private static final Broker broker = () -> "Broker";
+    private static final Broker broker = createBroker("Broker");
 
-    private static final Broker anotherBroker = () -> "Another Broker";
-
-    private static final Broker unknownBroker = () -> "Unknown Broker";
+    private static final Broker anotherBroker = createBroker("Another Broker");
 
     public static final Asset asset = new Asset(company, AssetType.COMMON, MarketType.COMMON);
 
@@ -75,21 +76,10 @@ public class StockMarketTest {
     @Test
     public void testGetOperationBooks() {
 
-        Collection<OperationBook> operationBooks = stockMarket.getOperationBooks();
+        Map<Asset, OperationBook> operationBooks = stockMarket.getOperationBooks();
 
         assertEquals(2, operationBooks.size(), "Wrong number of operation books");
-        assertThrows(UnsupportedOperationException.class, () -> operationBooks.add(null), "Operation books collection should be unmodifiable");
-
-    }
-
-    @Test
-    public void testGetAssets() {
-
-        Set<Asset> assets = stockMarket.getAssets();
-
-        assertEquals(2, assets.size(), "Wrong number of assets");
-        assertTrue(assets.contains(asset), "Assets should contain fake asset");
-        assertThrows(UnsupportedOperationException.class, () -> assets.add(null), "Assets collection should be unmodifiable");
+        assertThrows(UnsupportedOperationException.class, () -> operationBooks.put(null, null), "Operation books collection should be unmodifiable");
 
     }
 
@@ -105,41 +95,37 @@ public class StockMarketTest {
     }
 
     @Test
-    public void testGetWallet() {
-
-        assertThrows(NullPointerException.class, () -> stockMarket.getWallet(null), "Should not accept null broker");
-        assertThrows(IllegalArgumentException.class, () -> stockMarket.getWallet(unknownBroker), "Should not accept unknown broker");
-        assertNotNull(stockMarket.getWallet(broker), "Broker not found");
-
-    }
-
-    @Test
-    public void testRegisterTransaction() {
-
-        OfferOperation sellOfferOperation = mock(OfferOperation.class);
-        OfferOperation buyOfferOperation = mock(OfferOperation.class);
-
-        assertThrows(NullPointerException.class, () -> stockMarket.registerTransaction(null, buyOfferOperation, 1), "Should not accept null sell offer operation");
-        assertThrows(NullPointerException.class, () -> stockMarket.registerTransaction(sellOfferOperation, null, 1), "Should not accept null buy offer operation");
-
-        when(sellOfferOperation.getAsset()).thenReturn(asset);
-        when(buyOfferOperation.getAsset()).thenReturn(anotherAsset);
-
-        when(sellOfferOperation.getBroker()).thenReturn(broker);
-        when(buyOfferOperation.getBroker()).thenReturn(anotherBroker);
-
-        assertThrows(IllegalArgumentException.class, () -> stockMarket.registerTransaction(sellOfferOperation, buyOfferOperation, 1), "Should not accept different assets");
-
-    }
-
-    @Test
     public void testObservableBehaviour() {
 
-        TransactionObserver transactionObserver = mock(TransactionObserver.class);
+        AtomicBoolean observerCalled = new AtomicBoolean(false);
+        TransactionObserver transactionObserver = (from, to, asset, quantity, price) -> observerCalled.set(true);
 
         stockMarket.observe(transactionObserver);
         assertTrue(stockMarket.getObservers().contains(transactionObserver), "Should contain the added transaction observer");
         assertThrows(UnsupportedOperationException.class, () -> stockMarket.getObservers().add(null), "Observers collection should be unmodifiable");
+
+        stockMarket.notifyTransactionObservers(broker, anotherBroker, asset, 1, 1);
+
+        assertTrue(observerCalled.get(), "Observer should have been called");
+
+    }
+
+    public static Broker createBroker(String name) {
+        return new Broker() {
+
+            private final Wallet wallet = new Wallet();
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Wallet getWallet() {
+                return this.wallet;
+            }
+
+        };
 
     }
 

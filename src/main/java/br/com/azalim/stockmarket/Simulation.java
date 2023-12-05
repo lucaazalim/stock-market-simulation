@@ -3,7 +3,6 @@ package br.com.azalim.stockmarket;
 import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.asset.MarketType;
 import br.com.azalim.stockmarket.broker.Broker;
-import br.com.azalim.stockmarket.broker.BrokerWallet;
 import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
 import br.com.azalim.stockmarket.operation.Operation;
 import br.com.azalim.stockmarket.operation.OperationFactory;
@@ -82,18 +81,11 @@ public class Simulation {
 
     public static void stop() {
 
-        // TODO
-
         if (!RUNNING) {
             throw new IllegalStateException("Simulation is not running");
         }
 
-        StockMarket stockMarket = StockMarket.getInstance();
-
-        stockMarket.getBrokers().forEach(broker -> {
-            BrokerWallet brokerWallet = stockMarket.getWallet(broker);
-            //System.out.println(broker + " -> " + brokerWallet.getQuantity);
-        });
+        // TODO as a future improvement, we could print a summary of the simulation here
 
         RUNNING = false;
 
@@ -116,7 +108,7 @@ public class Simulation {
      */
     private static void observeRandomStocks(OperationBookObserver operationBookObserver) {
 
-        List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getAssets());
+        List<Asset> allAssets = new ArrayList<>(StockMarket.getInstance().getOperationBooks().keySet());
 
         String stocksBeingObserved = allAssets.stream()
                 .skip(RANDOM.nextInt(allAssets.size()))
@@ -135,7 +127,7 @@ public class Simulation {
      */
     private static void registerRandomOperation(Broker broker) {
 
-        Set<Asset> allAssets = StockMarket.getInstance().getAssets();
+        Set<Asset> allAssets = StockMarket.getInstance().getOperationBooks().keySet();
         Asset randomAsset = allAssets.stream().skip(RANDOM.nextInt(allAssets.size())).findFirst().orElseThrow();
         Operation randomOperation;
 

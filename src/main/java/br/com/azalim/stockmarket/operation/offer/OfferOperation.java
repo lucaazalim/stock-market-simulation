@@ -5,6 +5,7 @@ import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.Operation;
 import br.com.azalim.stockmarket.operation.OperationBook;
+import br.com.azalim.stockmarket.wallet.Transaction;
 
 import java.util.Objects;
 
@@ -166,7 +167,13 @@ public class OfferOperation extends Operation {
                         OfferOperation sellOfferOperation = this.getType() == OfferOperationType.SELL ? this : offerOperation;
                         OfferOperation buyOfferOperation = this.getType() == OfferOperationType.BUY ? this : offerOperation;
 
-                        stockMarket.registerTransaction(sellOfferOperation, buyOfferOperation, consumedQuantity);
+                        Broker from = sellOfferOperation.getBroker(), to = buyOfferOperation.getBroker();
+                        double price = sellOfferOperation.getPrice();
+
+                        from.getWallet().registerTransaction(this.getAsset(), new Transaction(-consumedQuantity, price));
+                        to.getWallet().registerTransaction(this.getAsset(), new Transaction(consumedQuantity, price));
+
+                        stockMarket.notifyTransactionObservers(from, to, this.getAsset(), consumedQuantity, price);
 
                     }
 

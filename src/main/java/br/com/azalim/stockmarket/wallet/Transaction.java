@@ -1,4 +1,4 @@
-package br.com.azalim.stockmarket;
+package br.com.azalim.stockmarket.wallet;
 
 import java.time.Instant;
 

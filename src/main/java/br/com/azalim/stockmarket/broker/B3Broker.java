@@ -2,6 +2,7 @@ package br.com.azalim.stockmarket.broker;
 
 import br.com.azalim.stockmarket.observer.impl.OperationBookObserver;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
+import br.com.azalim.stockmarket.wallet.Wallet;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -26,6 +27,8 @@ public enum B3Broker implements Broker, OperationBookObserver {
      */
     private final String name;
 
+    private final Wallet wallet = new Wallet();
+
     /**
      * Creates a broker.
      *
@@ -41,6 +44,14 @@ public enum B3Broker implements Broker, OperationBookObserver {
     @Override
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * @return the wallet of the broker.
+     */
+    @Override
+    public Wallet getWallet() {
+        return this.wallet;
     }
 
     /**

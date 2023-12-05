@@ -4,6 +4,7 @@ import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.asset.AssetType;
 import br.com.azalim.stockmarket.asset.MarketType;
 import br.com.azalim.stockmarket.broker.Broker;
+import br.com.azalim.stockmarket.wallet.Wallet;
 import br.com.azalim.stockmarket.company.Company;
 import br.com.azalim.stockmarket.operation.OperationBook;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
@@ -20,8 +21,7 @@ import static org.mockito.Mockito.*;
 
 public class OfferOperationTest {
 
-    private static Company company;
-    private static Broker broker;
+    private static Broker broker, anotherBroker;
     private static StockMarket stockMarket;
 
     private static Asset asset;
@@ -29,11 +29,13 @@ public class OfferOperationTest {
     @BeforeAll
     public static void setup() {
 
-        company = mock(Company.class);
-        broker = mock(Broker.class);
+        Company company = mock(Company.class);
 
         when(company.getSymbol()).thenReturn("FAKE");
         when(company.getAssetTypes()).thenReturn(Set.of(AssetType.COMMON));
+
+        broker = StockMarketTest.createBroker("Broker");
+        anotherBroker = StockMarketTest.createBroker("Another Broker");
 
         stockMarket = new StockMarket(Set.of(company), Set.of(broker));
         asset = new Asset(company, AssetType.COMMON, MarketType.FRACTIONAL);
@@ -123,15 +125,19 @@ public class OfferOperationTest {
     public void testProcessValidOffer() {
 
         OfferOperation offerOperation = new OfferOperation(broker, asset, OfferOperationType.BUY, 15, 10);
-        OfferOperation matchingOfferOperation = new OfferOperation(broker, asset, OfferOperationType.SELL, 20, 5);
+        OfferOperation matchingOfferOperation = new OfferOperation(anotherBroker, asset, OfferOperationType.SELL, 20, 5);
         OperationBook operationBook = new OperationBook();
 
         operationBook.register(offerOperation);
         operationBook.register(matchingOfferOperation);
 
         assertTrue(offerOperation.process(stockMarket, operationBook), "Should process successfully");
+
         assertEquals(offerOperation.getStatus(), OfferOperationStatus.EXECUTED, "Should be executed");
         assertEquals(matchingOfferOperation.getStatus(), OfferOperationStatus.PARTIALLY_EXECUTED, "Should be partially executed");
+
+        assertEquals(15, broker.getWallet().getQuantity(asset), "Should have 15 shares");
+        assertEquals(-15, anotherBroker.getWallet().getQuantity(asset), "Should have -15 shares");
 
     }
 

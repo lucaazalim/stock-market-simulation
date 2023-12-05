@@ -3,12 +3,12 @@ package br.com.azalim.stockmarket;
 import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.asset.MarketType;
 import br.com.azalim.stockmarket.broker.Broker;
-import br.com.azalim.stockmarket.broker.BrokerWallet;
 import br.com.azalim.stockmarket.company.Company;
 import br.com.azalim.stockmarket.observer.Observable;
 import br.com.azalim.stockmarket.observer.impl.TransactionObserver;
 import br.com.azalim.stockmarket.operation.OperationBook;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
+import br.com.azalim.stockmarket.wallet.Transaction;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -26,14 +26,14 @@ public class StockMarket implements Observable<TransactionObserver> {
     private static StockMarket instance;
 
     /**
-     * The operation books of the stocks.
+     * The operation books of the assets.
      */
-    private final Map<Asset, OperationBook> operationBooks = new HashMap<>();
+    private Map<Asset, OperationBook> operationBooks = new HashMap<>();
 
     /**
-     * The wallets of the brokers.
+     * The brokers of the stock market.
      */
-    private final Map<Broker, BrokerWallet> wallets = new HashMap<>();
+    private Set<Broker> brokers = new HashSet<>();
 
     /**
      * The observers of the transactions.
@@ -56,7 +56,7 @@ public class StockMarket implements Observable<TransactionObserver> {
      * @param companies the companies of the stock market.
      * @param brokers   the brokers of the stock market.
      */
-    public StockMarket(Set<Company> companies, Set<Broker> brokers) {
+    public StockMarket(Collection<Company> companies, Collection<Broker> brokers) {
 
         Objects.requireNonNull(companies);
         Objects.requireNonNull(brokers);
@@ -85,7 +85,10 @@ public class StockMarket implements Observable<TransactionObserver> {
                 .map(Asset.class::cast)
                 .forEach(stock -> this.operationBooks.put(stock, new OperationBook())));
 
-        brokers.forEach(broker -> this.wallets.put(broker, new BrokerWallet()));
+        this.operationBooks = Collections.unmodifiableMap(this.operationBooks);
+
+        this.brokers.addAll(brokers);
+        this.brokers = Collections.unmodifiableSet(this.brokers);
 
     }
 
@@ -111,71 +114,17 @@ public class StockMarket implements Observable<TransactionObserver> {
     }
 
     /**
-     * @return an unmodifiable collection of all the operation books of the stock market.
+     * @return the unmodifiable map of all the operation books of the stock market.
      */
-    public Collection<OperationBook> getOperationBooks() {
-        return Collections.unmodifiableCollection(this.operationBooks.values());
+    public Map<Asset, OperationBook> getOperationBooks() {
+        return this.operationBooks;
     }
 
     /**
-     * @return an unmodifiable set of all the assets of the stock market.
-     */
-    public Set<Asset> getAssets() {
-        return Collections.unmodifiableSet(this.operationBooks.keySet());
-    }
-
-    /**
-     * @return an unmodifiable set of all the brokers of the stock market.
+     * @return the unmodifiable set of all the brokers of the stock market.
      */
     public Set<Broker> getBrokers() {
-        return Collections.unmodifiableSet(this.wallets.keySet());
-    }
-
-    /**
-     * Retrieves the wallet of a given broker.
-     *
-     * @param broker the owner of the wallet.
-     * @return the wallet of the given broker or null if it does not exist.
-     */
-    public BrokerWallet getWallet(Broker broker) {
-
-        Objects.requireNonNull(broker);
-
-        BrokerWallet brokerWallet = this.wallets.get(broker);
-
-        if (brokerWallet == null) {
-            throw new IllegalArgumentException("The broker does not exist: " + broker);
-        }
-
-        return brokerWallet;
-
-    }
-
-    public void registerTransaction(OfferOperation sellOfferOperation, OfferOperation buyOfferOperation, int quantity) {
-
-        Objects.requireNonNull(sellOfferOperation);
-        Objects.requireNonNull(buyOfferOperation);
-
-        Asset asset = sellOfferOperation.getAsset();
-
-        if (!asset.equals(buyOfferOperation.getAsset())) {
-            throw new IllegalArgumentException("The offer operations must be related to the same asset");
-        }
-
-        this.getOperationBook(asset); // Just to make sure the asset exists in this stock market
-
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("The quantity must be greater than zero");
-        }
-
-        Broker from = sellOfferOperation.getBroker(), to = buyOfferOperation.getBroker();
-        double price = sellOfferOperation.getPrice();
-
-        this.getWallet(from).registerTransaction(asset, new Transaction(-quantity, price));
-        this.getWallet(to).registerTransaction(asset, new Transaction(quantity, price));
-
-        this.observers.forEach(transactionObserver -> transactionObserver.onNewTransactionRegistered(from, to, asset, quantity, price));
-
+        return this.brokers;
     }
 
     /**
@@ -183,10 +132,11 @@ public class StockMarket implements Observable<TransactionObserver> {
      */
     public void startProcessingOperations() {
 
-        this.getOperationBooks().forEach(operationBook -> this.operationProcessorExecutorService.scheduleWithFixedDelay(
-                () -> operationBook.processOperations(this),
-                1, 1, TimeUnit.SECONDS
-        ));
+        this.getOperationBooks().values()
+                .forEach(operationBook -> this.operationProcessorExecutorService.scheduleWithFixedDelay(
+                        () -> operationBook.processOperations(this),
+                        1, 1, TimeUnit.SECONDS
+                ));
 
     }
 
@@ -195,6 +145,19 @@ public class StockMarket implements Observable<TransactionObserver> {
      */
     public void stopProcessingOperations() {
         this.operationProcessorExecutorService.shutdown();
+    }
+
+    /**
+     * Notifies the observers that a new transaction has been registered.
+     *
+     * @param from     the broker that sold the asset.
+     * @param to       the broker that bought the asset.
+     * @param asset    the asset that was bought and sold.
+     * @param quantity the quantity of the asset that was bought and sold.
+     * @param price    the price of the asset that was bought and sold.
+     */
+    public void notifyTransactionObservers(Broker from, Broker to, Asset asset, int quantity, double price) {
+        this.observers.forEach(transactionObserver -> transactionObserver.onNewTransactionRegistered(from, to, asset, quantity, price));
     }
 
     /**

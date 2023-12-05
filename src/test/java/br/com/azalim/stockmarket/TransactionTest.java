@@ -1,5 +1,6 @@
 package br.com.azalim.stockmarket;
 
+import br.com.azalim.stockmarket.wallet.Transaction;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
