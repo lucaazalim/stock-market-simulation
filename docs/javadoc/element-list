@@ -1,0 +1,10 @@
+br.com.azalim.stockmarket
+br.com.azalim.stockmarket.asset
+br.com.azalim.stockmarket.broker
+br.com.azalim.stockmarket.company
+br.com.azalim.stockmarket.observer
+br.com.azalim.stockmarket.observer.impl
+br.com.azalim.stockmarket.operation
+br.com.azalim.stockmarket.operation.info
+br.com.azalim.stockmarket.operation.offer
+br.com.azalim.stockmarket.wallet
