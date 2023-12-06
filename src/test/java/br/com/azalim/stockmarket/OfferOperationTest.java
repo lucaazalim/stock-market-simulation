@@ -4,7 +4,6 @@ import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.asset.AssetType;
 import br.com.azalim.stockmarket.asset.MarketType;
 import br.com.azalim.stockmarket.broker.Broker;
-import br.com.azalim.stockmarket.wallet.Wallet;
 import br.com.azalim.stockmarket.company.Company;
 import br.com.azalim.stockmarket.operation.OperationBook;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;

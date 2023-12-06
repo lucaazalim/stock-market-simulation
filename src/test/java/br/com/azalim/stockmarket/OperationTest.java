@@ -1,6 +1,5 @@
 package br.com.azalim.stockmarket;
 
-import br.com.azalim.stockmarket.StockMarket;
 import br.com.azalim.stockmarket.asset.Asset;
 import br.com.azalim.stockmarket.broker.Broker;
 import br.com.azalim.stockmarket.operation.Operation;
@@ -8,10 +7,11 @@ import br.com.azalim.stockmarket.operation.OperationBook;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OperationTest {
 

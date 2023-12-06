@@ -7,7 +7,6 @@ import br.com.azalim.stockmarket.operation.info.InfoOperation;
 import br.com.azalim.stockmarket.operation.offer.OfferOperation;
 import br.com.azalim.stockmarket.operation.offer.OfferOperationStatus;
 import org.junit.jupiter.api.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.time.Instant;
